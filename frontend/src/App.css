@@ -862,3 +862,48 @@ nav {
 .message.loading {
   opacity: 0.65;
 }
+
+/* =========================================================
+   BACKEND STATUS
+========================================================= */
+
+.backend-indicator {
+  font-size: 9px;
+
+  transition:
+    color 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.backend-indicator.connected {
+  color: var(--success);
+
+  text-shadow:
+    0 0 10px rgba(118, 200, 155, 0.45);
+}
+
+.backend-indicator.checking {
+  color: #d5a85b;
+
+  animation: pulse 1.2s infinite;
+}
+
+.backend-indicator.offline {
+  color: #d66d6d;
+}
+
+@keyframes pulse {
+
+  0% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.35;
+  }
+
+}
