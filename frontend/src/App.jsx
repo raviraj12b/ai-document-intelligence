@@ -6,7 +6,7 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import DocumentPreview from "./components/DocumentPreview";
 import AIAnalysis from "./components/AIAnalysis";
-import { checkBackendHealth, uploadDocument } from "./api";
+import { checkBackendHealth, uploadDocument , getDocuments} from "./api";
 
 
 function App() {
@@ -16,32 +16,12 @@ function App() {
 
   const [uploading, setUploading] =
     useState(false);
+  
+  const [documents, setDocuments] =
+    useState([]);
 
-
-
-
-  const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      name: "Research Report.pdf",
-      page: 42
-    },
-
-    {
-      id: 2,
-      name: "Contract.pdf",
-      page: 12
-    },
-
-    {
-      id: 3,
-      name: "Report.pdf",
-      page: 7
-    }  
-  ]);
-
-
-  const [selectedDocument, setSelectedDocument] = useState(documents[0]);
+  const [selectedDocument, setSelectedDocument] =
+    useState(null);
 
 
   useEffect(() => {
@@ -65,6 +45,61 @@ function App() {
     checkConnection();
 
   }, []);
+
+  useEffect(() => {
+
+  async function loadDocuments() {
+
+    try {
+
+      const data =
+        await getDocuments();
+
+
+      const formattedDocuments =
+        data.documents.map(
+          (document) => ({
+            id: document.id,
+            name: document.filename,
+            page: 1,
+            pages: document.pages,
+            characters:
+              document.characters,
+            status: document.status
+          })
+        );
+
+
+      setDocuments(
+        formattedDocuments
+      );
+
+
+      if (
+        formattedDocuments.length > 0
+      ) {
+
+        setSelectedDocument(
+          formattedDocuments[0]
+        );
+      }
+
+
+    } catch (error) {
+
+      console.error(
+        "Failed to load documents:",
+        error
+      );
+
+    }
+
+  }
+
+
+  loadDocuments();
+
+}, []);
 
   const handleAddDocument = () => {
 
@@ -97,7 +132,8 @@ function App() {
         name: uploadedDocument.filename,
         page: 1,
         pages: uploadedDocument.pages,
-        characters: uploadedDocument.characters
+        characters: uploadedDocument.characters,
+        status: uploadDocument.status
       };
 
       setDocuments((previousDocuments) => [
@@ -158,7 +194,7 @@ function App() {
 
             <div>
               <h1>
-                {selectedDocument.name}
+                {selectedDocument?.name || "No document selected"}
               </h1>
             </div>
 
@@ -169,6 +205,8 @@ function App() {
 
           </div>
 
+
+        {selectedDocument ? (
 
           <div className="workspace">
 
@@ -181,6 +219,14 @@ function App() {
             />
 
           </div>
+
+        ) : (
+
+          <div className="empty-workspace">
+            <p>Upload a document to get started.</p>
+          </div>
+
+        )}
 
         </main>
 

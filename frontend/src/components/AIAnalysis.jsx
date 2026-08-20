@@ -1,81 +1,102 @@
 import { useState } from "react";
+
 import SourceList from "./SourceList";
+import { askQuestion } from "../api";
+
 
 function AIAnalysis({ document }) {
 
   const [question, setQuestion] = useState("");
 
-  const [messages, setMessages] = useState([
-    {
-      type: "user",
-      text: "What was the revenue growth in 2025?"
-    },
-    {
-      type: "ai",
-      text:
-        "Revenue increased by 18% compared with the previous fiscal year."
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
+
+  const [sources, setSources] = useState([]);
 
   const [loading, setLoading] = useState(false);
 
-  const sources = [
-    {
-      document: document.name,
-      page: 42
-    },
-    {
-      document: "Financials.pdf",
-      page: 8
-    }
-  ];
+  const [error, setError] = useState("");
 
-  const handleSubmit = (event) => {
+
+  const handleSubmit = async (event) => {
 
     event.preventDefault();
 
-    if (!question.trim() || loading) {
+    const trimmedQuestion = question.trim();
+
+    if (!trimmedQuestion || loading) {
       return;
     }
 
+
     const userMessage = {
       type: "user",
-      text: question
+      text: trimmedQuestion
     };
 
-    setMessages((previous) => [
-      ...previous,
+
+    setMessages((previousMessages) => [
+      ...previousMessages,
       userMessage
     ]);
 
-    setQuestion("");
 
+    setQuestion("");
+    setError("");
     setLoading(true);
 
-    setTimeout(() => {
+
+    try {
+
+      const result = await askQuestion(
+        trimmedQuestion
+      );
+
 
       const aiMessage = {
         type: "ai",
-        text:
-          "Based on the available document context, this is a simulated response. Our real RAG pipeline will generate this answer later."
+        text: result.answer
       };
 
-      setMessages((previous) => [
-        ...previous,
+
+      setMessages((previousMessages) => [
+        ...previousMessages,
         aiMessage
       ]);
 
+
+      setSources(
+        result.sources || []
+      );
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      setError(
+        error.message ||
+        "Something went wrong while processing your question."
+      );
+
+
+    } finally {
+
       setLoading(false);
 
-    }, 1200);
+    }
+
   };
 
+
   return (
+
     <section className="ai-analysis">
 
       <div className="analysis-header">
 
-        <p>AI ANALYSIS</p>
+        <p>
+          AI ANALYSIS
+        </p>
 
         <h2>
           Ask anything about this document
@@ -86,6 +107,20 @@ function AIAnalysis({ document }) {
 
       <div className="conversation">
 
+
+        {messages.length === 0 && (
+
+          <div className="empty-chat">
+
+            <p>
+              Ask a question about the indexed document.
+            </p>
+
+          </div>
+
+        )}
+
+
         {messages.map((message, index) => (
 
           <div
@@ -94,10 +129,13 @@ function AIAnalysis({ document }) {
           >
 
             {message.type === "ai" && (
+
               <span className="message-label">
                 AI INSIGHT
               </span>
+
             )}
+
 
             <p>
               {message.text}
@@ -109,21 +147,42 @@ function AIAnalysis({ document }) {
 
 
         {loading && (
+
           <div className="message ai loading">
+
             <span className="message-label">
               AI INSIGHT
             </span>
 
             <p>
-              Thinking...
+              Analyzing document...
             </p>
+
           </div>
+
+        )}
+
+
+        {error && (
+
+          <div className="chat-error">
+
+            {error}
+
+          </div>
+
         )}
 
       </div>
 
 
-      <SourceList sources={sources} />
+      {sources.length > 0 && (
+
+        <SourceList
+          sources={sources}
+        />
+
+      )}
 
 
       <form
@@ -137,13 +196,17 @@ function AIAnalysis({ document }) {
           onChange={(event) =>
             setQuestion(event.target.value)
           }
-          placeholder="Ask a follow-up question..."
+          placeholder="Ask a question..."
           disabled={loading}
         />
 
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={
+            loading ||
+            !question.trim()
+          }
         >
           ↑
         </button>
@@ -151,7 +214,9 @@ function AIAnalysis({ document }) {
       </form>
 
     </section>
+
   );
 }
+
 
 export default AIAnalysis;

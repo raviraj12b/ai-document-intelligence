@@ -907,3 +907,40 @@ nav {
   }
 
 }
+
+/* =========================================================
+   CHAT STATES
+========================================================= */
+
+.empty-chat {
+  padding: 20px 4px;
+
+  color: var(--text-muted);
+
+  font-size: 12px;
+
+  line-height: 1.6;
+}
+
+.chat-error {
+  padding: 11px 13px;
+
+  border: 1px solid rgba(214, 109, 109, 0.18);
+  border-radius: 8px;
+
+  background: rgba(214, 109, 109, 0.06);
+
+  color: #d98b8b;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.chat-input button:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
