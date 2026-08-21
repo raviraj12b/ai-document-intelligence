@@ -477,7 +477,7 @@ You also need a 🔑 **Groq API key**.
 Replace the URL below with your actual GitHub repository URL:
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/raviraj12b/ai-document-intelligence.git
 ```
 
 Then:
@@ -863,22 +863,13 @@ This project is currently intended for educational, portfolio, and development p
 
 Built as a full-stack AI / RAG portfolio project.
 
-✏️ Replace this section with your preferred name and profile links before publishing.
+**Rajesh Borkar**
 
----
+AI & Data Science student focused on building practical projects in Machine Learning, RAG, Generative AI, and full-stack AI applications.
 
-## ✅ Repository Checklist Before Publishing
-
-- [ ] 🔗 Replace `YOUR_GITHUB_REPOSITORY_URL`
-- [ ] 📄 Add `.env.example`
-- [ ] 🔒 Verify `.env` is ignored
-- [ ] 🔑 Verify no Groq API key is committed
-- [ ] 📸 Add application screenshots
-- [ ] 📦 Confirm `requirements.txt` is current
-- [ ] 📦 Confirm `package.json` contains all required frontend dependencies
-- [ ] 🧪 Test installation from a clean environment
-- [ ] ⬆️ Push the latest commits
-- [ ] 🌐 Add deployment URLs after deployment
+- GitHub: [raviraj12b](https://github.com/raviraj12b)
+- LinkedIn: [Rajesh Borkar](https://www.linkedin.com/in/rajeshborkar01)
+- Email: [rajeshborkar04@gmail.com](mailto:rajeshborkar04@gmail.com)
 
 ---
 
