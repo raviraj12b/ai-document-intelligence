@@ -12,6 +12,7 @@ router = APIRouter(
 
 class ChatRequest(BaseModel):
     question: str
+    document_id:str
 
 
 @router.post("")
@@ -26,7 +27,8 @@ async def chat(request: ChatRequest):
     try:
 
         result = ask_document(
-            request.question
+        question=request.question,
+        document_id=request.document_id
         )
 
         return result

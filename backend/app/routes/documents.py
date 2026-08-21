@@ -201,37 +201,26 @@ def remove_document(document_id: str):
             []
         )
 
-    stored_filename = deleted_document.get(
-    "stored_filename"
-    )
+    stored_filename = deleted_document.get("stored_filename")
+    filename = None
 
     if not stored_filename:
-
-        filename = deleted_document.get(
-        "filename"
-        )
+        filename = deleted_document.get("filename")
 
     if filename:
-        stored_filename = (
-            f"{document_id}_{filename}"
-        )
+        stored_filename = f"{document_id}_{filename}"
 
 
     if stored_filename:
-
         file_path = os.path.join(
         UPLOAD_DIR,
         stored_filename
-         )
+     )
 
     if os.path.exists(file_path):
-
         os.remove(file_path)
 
     else:
-        print(f"Uploaded file not found: {file_path}")
-
-    return{
-        "message": "Document deleted successfully.",
-        "id": document_id
-    }
+        print(
+            f"Uploaded file not found: {file_path}"
+        )

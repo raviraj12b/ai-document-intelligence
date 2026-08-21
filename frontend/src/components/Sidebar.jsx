@@ -3,9 +3,10 @@ function Sidebar({
   selectedDocument,
   onSelectDocument,
   onAddDocument,
-  uploading
+  onDeleteDocument,
+  uploading,
+  deletingDocumentId
 }) {
-
   return (
     <aside className="sidebar">
 
@@ -16,7 +17,6 @@ function Sidebar({
         </p>
 
         <nav>
-
           <button className="nav-item active">
             Overview
           </button>
@@ -28,14 +28,11 @@ function Sidebar({
           <button className="nav-item">
             Collections
           </button>
-
         </nav>
 
       </div>
 
-
       <div className="sidebar-divider" />
-
 
       <div className="sidebar-section">
 
@@ -43,43 +40,58 @@ function Sidebar({
           RECENT
         </p>
 
-
         {documents.map((document) => (
-
-          <button
+          <div
             key={document.id}
-            className={`recent-document ${
+            className={`recent-document-row ${
               selectedDocument?.id === document.id
                 ? "selected-document"
                 : ""
             }`}
-            onClick={() =>
-              onSelectDocument(document)
-            }
           >
-            {document.name}
-          </button>
 
+            <button
+              className="recent-document"
+              onClick={() =>
+                onSelectDocument(document)
+              }
+            >
+              {document.name}
+            </button>
+
+            <button
+              className="document-delete-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteDocument(document.id);
+              }}
+              disabled={
+                deletingDocumentId === document.id
+              }
+              aria-label={`Delete ${document.name}`}
+            >
+              {deletingDocumentId === document.id
+                ? "..."
+                : "×"}
+            </button>
+
+          </div>
         ))}
 
       </div>
-
 
       <button
         className="add-document"
         onClick={onAddDocument}
         disabled={uploading}
       >
-
         {uploading
           ? "Processing..."
           : "+ Add document"}
-
       </button>
 
     </aside>
   );
 }
-
 
 export default Sidebar;

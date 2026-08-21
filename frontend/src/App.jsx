@@ -6,7 +6,7 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import DocumentPreview from "./components/DocumentPreview";
 import AIAnalysis from "./components/AIAnalysis";
-import { checkBackendHealth, uploadDocument , getDocuments} from "./api";
+import { checkBackendHealth, uploadDocument , getDocuments, deleteDocument} from "./api";
 
 
 function App() {
@@ -22,6 +22,9 @@ function App() {
 
   const [selectedDocument, setSelectedDocument] =
     useState(null);
+
+  const [deletingDocumentId, setDeletingDocumentId] =
+  useState(null);
 
 
   useEffect(() => {
@@ -168,7 +171,71 @@ function App() {
 
   input.click();
 };
+const handleDeleteDocument = async (documentId) => {
 
+  const documentToDelete = documents.find(
+    (document) => document.id === documentId
+  );
+
+  if (!documentToDelete) {
+    return;
+  }
+
+
+  const confirmed = window.confirm(
+    `Delete "${documentToDelete.name}"?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  try {
+
+    setDeletingDocumentId(documentId);
+
+    await deleteDocument(documentId);
+
+
+    const updatedDocuments = documents.filter(
+      (document) =>
+        document.id !== documentId
+    );
+
+
+    setDocuments(updatedDocuments);
+
+
+    if (
+      selectedDocument?.id === documentId)
+    {
+
+      setSelectedDocument(
+        updatedDocuments.length > 0
+          ? updatedDocuments[0]
+          : null
+      );
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Failed to delete document:",
+      error
+    );
+
+    alert(error.message);
+
+
+  } finally {
+
+    setDeletingDocumentId(null);
+
+  }
+
+};
 
   return (
 
@@ -184,7 +251,9 @@ function App() {
           selectedDocument={selectedDocument}
           onSelectDocument={setSelectedDocument}
           onAddDocument={handleAddDocument}
+          onDeleteDocument={handleDeleteDocument}
           uploading={uploading}
+          deletingDocumentId={deletingDocumentId}
         />
 
 

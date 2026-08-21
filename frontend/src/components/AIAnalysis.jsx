@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import SourceList from "./SourceList";
 import { askQuestion } from "../api";
@@ -17,11 +17,31 @@ function AIAnalysis({ document }) {
   const [error, setError] = useState("");
 
 
+  useEffect(() => {
+
+    setMessages([]);
+    setSources([]);
+    setQuestion("");
+    setError("");
+
+  }, [document?.id]);
+
+
   const handleSubmit = async (event) => {
 
     event.preventDefault();
 
+
+    if (!document?.id) {
+      setError(
+        "Select a document before asking a question."
+      );
+      return;
+    }
+
+
     const trimmedQuestion = question.trim();
+
 
     if (!trimmedQuestion || loading) {
       return;
@@ -48,7 +68,8 @@ function AIAnalysis({ document }) {
     try {
 
       const result = await askQuestion(
-        trimmedQuestion
+        trimmedQuestion,
+        document.id
       );
 
 
@@ -166,9 +187,7 @@ function AIAnalysis({ document }) {
         {error && (
 
           <div className="chat-error">
-
             {error}
-
           </div>
 
         )}

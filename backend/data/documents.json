@@ -1,10 +1,20 @@
 [
   {
-    "id": "85e9ce40-f42e-482f-a656-dc3e5a00b93b",
-    "filename": "OOPS Notes🎯.pdf",
-    "pages": 19,
-    "characters": 18392,
-    "chunks": 33,
+    "id": "986e67eb-0c1f-4ae0-9a6d-be5e93872651",
+    "filename": "CSS Notes.pdf",
+    "stored_filename": "986e67eb-0c1f-4ae0-9a6d-be5e93872651_CSS Notes.pdf",
+    "pages": 72,
+    "characters": 14068,
+    "chunks": 72,
+    "status": "indexed"
+  },
+  {
+    "id": "55f5c309-0165-4f31-b572-6a3f201f87ca",
+    "filename": "Java Programming Notes .pdf",
+    "stored_filename": "55f5c309-0165-4f31-b572-6a3f201f87ca_Java Programming Notes .pdf",
+    "pages": 79,
+    "characters": 83769,
+    "chunks": 138,
     "status": "indexed"
   }
 ]

@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 
 export async function checkBackendHealth() {
@@ -44,7 +44,7 @@ export async function uploadDocument(file) {
   return response.json();
 }
 
-export async function askQuestion(question) {
+export async function askQuestion(question, documentId ) {
 
   const response = await fetch(
     "http://127.0.0.1:8000/api/chat",
@@ -56,7 +56,8 @@ export async function askQuestion(question) {
       },
 
       body: JSON.stringify({
-        question: question
+        question: question,
+        document_id: documentId
       })
     }
   );

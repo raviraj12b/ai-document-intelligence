@@ -944,3 +944,85 @@ nav {
 
   transform: none;
 }
+
+/* =========================================================
+   DOCUMENT ACTIONS
+========================================================= */
+
+.recent-document-row {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  border-radius: 8px;
+
+  transition: background 0.2s ease;
+}
+
+.recent-document-row:hover {
+  background: var(--surface-hover);
+}
+
+.recent-document-row.selected-document {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(121, 167, 255, 0.11),
+      rgba(121, 167, 255, 0.03)
+    );
+}
+
+.recent-document-row .recent-document {
+  flex: 1;
+
+  min-width: 0;
+
+  background: transparent;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.document-delete-button {
+  width: 26px;
+  height: 26px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: var(--text-muted);
+
+  font-size: 15px;
+
+  opacity: 0;
+
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.recent-document-row:hover
+.document-delete-button {
+  opacity: 1;
+}
+
+.document-delete-button:hover {
+  background: rgba(214, 109, 109, 0.09);
+
+  color: #dc8585;
+}
+
+.document-delete-button:disabled {
+  opacity: 0.45;
+
+  cursor: wait;
+}

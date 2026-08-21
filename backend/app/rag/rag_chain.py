@@ -42,13 +42,15 @@ Question:
 
 def ask_document(
     question: str,
+    document_id: str | None = None,
     top_k: int = 5
 ):
 
     results = search_documents(
         question,
-        top_k=top_k
-    )
+        top_k=top_k,
+        document_id=document_id
+)
 
 
     if not results:
