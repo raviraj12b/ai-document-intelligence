@@ -7,5 +7,23 @@
     "characters": 83769,
     "chunks": 138,
     "status": "indexed"
+  },
+  {
+    "id": "46229259-b253-46f8-a24c-ec13d1830005",
+    "filename": "CSS Notes.pdf",
+    "stored_filename": "46229259-b253-46f8-a24c-ec13d1830005_CSS Notes.pdf",
+    "pages": 72,
+    "characters": 14068,
+    "chunks": 72,
+    "status": "indexed"
+  },
+  {
+    "id": "fb863d0b-6692-4be7-8e71-d2b81349607a",
+    "filename": "Weather_App_PRD_Professional.pdf",
+    "stored_filename": "fb863d0b-6692-4be7-8e71-d2b81349607a_Weather_App_PRD_Professional.pdf",
+    "pages": 2,
+    "characters": 1734,
+    "chunks": 3,
+    "status": "indexed"
   }
 ]

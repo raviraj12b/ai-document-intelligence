@@ -7,26 +7,66 @@ function Sidebar({
   uploading,
   deletingDocumentId,
   activeView,
-  onViewChange
+  onViewChange,
+  uploadStage
 }) {
 
+  const getUploadLabel = () => {
+
+    if (!uploading) {
+      return "Add document";
+    }
+
+    switch (uploadStage) {
+
+      case "uploading":
+        return "Uploading...";
+
+      case "extracting":
+        return "Extracting...";
+
+      case "embedding":
+        return "Embedding...";
+
+      case "indexing":
+        return "Indexing...";
+
+      case "ready":
+        return "Ready";
+
+      default:
+        return "Processing...";
+
+    }
+
+  };
+
+
   return (
+
     <aside className="sidebar">
 
       <button
-        className="add-document"
+        className={`add-document ${
+          uploading
+            ? "uploading"
+            : ""
+        }`}
         onClick={onAddDocument}
         disabled={uploading}
       >
 
         <span className="add-document-icon">
-          +
+
+          {uploading
+            ? "•"
+            : "+"}
+
         </span>
 
+
         <span>
-          {uploading
-            ? "Processing..."
-            : "Add document"}
+          {getUploadLabel()}
         </span>
 
       </button>
@@ -42,12 +82,12 @@ function Sidebar({
         <nav className="sidebar-nav">
 
           <button
+            type="button"
             className={`nav-item ${
               activeView === "overview"
                 ? "active"
                 : ""
             }`}
-            type="button"
             onClick={() =>
               onViewChange("overview")
             }
@@ -59,12 +99,12 @@ function Sidebar({
 
 
           <button
+            type="button"
             className={`nav-item ${
               activeView === "documents"
                 ? "active"
                 : ""
             }`}
-            type="button"
             onClick={() =>
               onViewChange("documents")
             }
@@ -76,10 +116,15 @@ function Sidebar({
 
 
           <button
-            className="nav-item nav-item-muted"
             type="button"
-            disabled
-            title="Collections — coming soon"
+            className={`nav-item ${
+              activeView === "collections"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              onViewChange("collections")
+            }
           >
             <span className="nav-label">
               Collections
@@ -91,7 +136,8 @@ function Sidebar({
       </div>
 
 
-      <div className="sidebar-divider" />
+      <div className="sidebar-divider">
+      </div>
 
 
       <div className="sidebar-section recent-section">
@@ -103,90 +149,103 @@ function Sidebar({
 
         <div className="recent-list">
 
-          {documents.map((document) => {
+          {documents.length === 0 ? (
 
-            const isSelected =
-              selectedDocument?.id ===
-              document.id;
+            <div className="recent-empty">
+              No documents yet
+            </div>
 
-            const isDeleting =
-              deletingDocumentId ===
-              document.id;
+          ) : (
 
+            documents.map(
+              (document) => {
 
-            return (
+                const isSelected =
+                  selectedDocument?.id ===
+                  document.id;
 
-              <div
-                key={document.id}
-                className={`recent-document-row ${
-                  isSelected &&
-                  activeView === "documents"
-                    ? "selected-document"
-                    : ""
-                }`}
-              >
-
-                <button
-                  className="recent-document"
-                  onClick={() => {
-
-                    onSelectDocument(
-                      document
-                    );
-
-                    onViewChange(
-                      "documents"
-                    );
-
-                  }}
-                  title={document.name}
-                >
-
-                  <span className="recent-document-dot">
-                    •
-                  </span>
-
-                  <span className="recent-document-name">
-                    {document.name}
-                  </span>
-
-                </button>
+                const isDeleting =
+                  deletingDocumentId ===
+                  document.id;
 
 
-                <button
-                  className="document-delete-button"
-                  onClick={(event) => {
+                return (
 
-                    event.stopPropagation();
+                  <div
+                    key={document.id}
+                    className={`recent-document-row ${
+                      isSelected &&
+                      activeView === "documents"
+                        ? "selected-document"
+                        : ""
+                    }`}
+                  >
 
-                    onDeleteDocument(
-                      document.id
-                    );
+                    <button
+                      type="button"
+                      className="recent-document"
+                      onClick={() =>
+                        onSelectDocument(
+                          document
+                        )
+                      }
+                      title={document.name}
+                    >
 
-                  }}
-                  disabled={isDeleting}
-                  aria-label={`Delete ${document.name}`}
-                  title={`Delete ${document.name}`}
-                >
+                      <span className="recent-document-dot">
+                        •
+                      </span>
 
-                  {isDeleting
-                    ? "..."
-                    : "×"}
 
-                </button>
+                      <span className="recent-document-name">
 
-              </div>
+                        {document.name}
 
-            );
+                      </span>
 
-          })}
+                    </button>
+
+
+                    <button
+                      type="button"
+                      className="document-delete-button"
+                      onClick={(event) => {
+
+                        event.stopPropagation();
+
+                        onDeleteDocument(
+                          document.id
+                        );
+
+                      }}
+                      disabled={isDeleting}
+                      aria-label={`Delete ${document.name}`}
+                      title={`Delete ${document.name}`}
+                    >
+
+                      {isDeleting
+                        ? "..."
+                        : "×"}
+
+                    </button>
+
+                  </div>
+
+                );
+
+              }
+            )
+
+          )}
 
         </div>
 
       </div>
 
     </aside>
+
   );
+
 }
 
 

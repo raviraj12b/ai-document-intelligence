@@ -7,6 +7,10 @@ import Sidebar from "./components/Sidebar";
 import DocumentPreview from "./components/DocumentPreview";
 import AIAnalysis from "./components/AIAnalysis";
 import Overview from "./components/Overview";
+import Collections from "./components/Collections";
+import Toast from "./components/Toast";
+import DeleteModal from "./components/DeleteModal";
+import UploadProgress from "./components/UploadProgress";
 
 import {
   checkBackendHealth,
@@ -24,6 +28,12 @@ function App() {
   const [uploading, setUploading] =
     useState(false);
 
+  const [uploadStage, setUploadStage] =
+    useState("");
+
+  const [uploadFileName, setUploadFileName] =
+    useState("");
+
   const [documents, setDocuments] =
     useState([]);
 
@@ -33,11 +43,46 @@ function App() {
   const [deletingDocumentId, setDeletingDocumentId] =
     useState(null);
 
+  const [documentPendingDelete, setDocumentPendingDelete] =
+    useState(null);
+
   const [currentPage, setCurrentPage] =
     useState(1);
 
   const [activeView, setActiveView] =
     useState("documents");
+
+  const [toast, setToast] =
+    useState({
+      message: "",
+      type: "success"
+    });
+
+
+  /* =========================================================
+     TOAST
+  ========================================================= */
+
+  const showToast = (
+    message,
+    type = "success"
+  ) => {
+
+    setToast({
+      message,
+      type
+    });
+
+    setTimeout(() => {
+
+      setToast({
+        message: "",
+        type: "success"
+      });
+
+    }, 3500);
+
+  };
 
 
   /* =========================================================
@@ -52,13 +97,17 @@ function App() {
 
         await checkBackendHealth();
 
-        setBackendStatus("connected");
+        setBackendStatus(
+          "connected"
+        );
 
       } catch (error) {
 
         console.error(error);
 
-        setBackendStatus("offline");
+        setBackendStatus(
+          "offline"
+        );
 
       }
 
@@ -86,12 +135,25 @@ function App() {
         const formattedDocuments =
           data.documents.map(
             (document) => ({
-              id: document.id,
-              name: document.filename,
-              page: 1,
-              pages: document.pages,
-              characters: document.characters,
-              status: document.status
+
+              id:
+                document.id,
+
+              name:
+                document.filename,
+
+              page:
+                1,
+
+              pages:
+                document.pages,
+
+              characters:
+                document.characters,
+
+              status:
+                document.status
+
             })
           );
 
@@ -110,7 +172,6 @@ function App() {
           );
 
         }
-
 
       } catch (error) {
 
@@ -136,109 +197,224 @@ function App() {
   const handleAddDocument = () => {
 
     const input =
-      document.createElement("input");
+      document.createElement(
+        "input"
+      );
 
-    input.type = "file";
+    input.type =
+      "file";
 
-    input.accept = ".pdf";
-
-
-    input.onchange = async (event) => {
-
-      const file =
-        event.target.files[0];
+    input.accept =
+      ".pdf";
 
 
-      if (!file) {
-        return;
-      }
+    input.onchange =
+      async (event) => {
+
+        const file =
+          event.target.files[0];
 
 
-      try {
-
-        setUploading(true);
-
-
-        const uploadedDocument =
-          await uploadDocument(file);
+        if (!file) {
+          return;
+        }
 
 
-        const newDocument = {
-
-          id: uploadedDocument.id,
-
-          name:
-            uploadedDocument.filename,
-
-          page: 1,
-
-          pages:
-            uploadedDocument.pages,
-
-          characters:
-            uploadedDocument.characters,
-
-          status:
-            uploadedDocument.status
-
-        };
+        let stageTimerOne;
+        let stageTimerTwo;
+        let stageTimerThree;
 
 
-        setDocuments(
-          (previousDocuments) => [
+        try {
 
-            newDocument,
+          setUploading(true);
 
-            ...previousDocuments
+          setUploadFileName(
+            file.name
+          );
 
-          ]
-        );
-
-
-        setSelectedDocument(
-          newDocument
-        );
+          setUploadStage(
+            "uploading"
+          );
 
 
-        setCurrentPage(1);
+          stageTimerOne =
+            setTimeout(() => {
+
+              setUploadStage(
+                "extracting"
+              );
+
+            }, 700);
 
 
-        /*
-          If upload was started from Overview,
-          automatically open the uploaded PDF.
-        */
+          stageTimerTwo =
+            setTimeout(() => {
 
-        setActiveView(
-          "documents"
-        );
+              setUploadStage(
+                "embedding"
+              );
 
-
-        alert(
-          `${uploadedDocument.filename} uploaded successfully.`
-        );
+            }, 1700);
 
 
-      } catch (error) {
+          stageTimerThree =
+            setTimeout(() => {
 
-        console.error(
-          "Failed to upload document:",
-          error
-        );
+              setUploadStage(
+                "indexing"
+              );
 
-
-        alert(
-          error.message ||
-          "Failed to upload document."
-        );
+            }, 2900);
 
 
-      } finally {
+          const uploadedDocument =
+            await uploadDocument(
+              file
+            );
 
-        setUploading(false);
 
-      }
+          clearTimeout(
+            stageTimerOne
+          );
 
-    };
+          clearTimeout(
+            stageTimerTwo
+          );
+
+          clearTimeout(
+            stageTimerThree
+          );
+
+
+          setUploadStage(
+            "ready"
+          );
+
+
+          const newDocument = {
+
+            id:
+              uploadedDocument.id,
+
+            name:
+              uploadedDocument.filename,
+
+            page:
+              1,
+
+            pages:
+              uploadedDocument.pages,
+
+            characters:
+              uploadedDocument.characters,
+
+            status:
+              uploadedDocument.status
+
+          };
+
+
+          setDocuments(
+            (previousDocuments) => [
+
+              newDocument,
+
+              ...previousDocuments
+
+            ]
+          );
+
+
+          setSelectedDocument(
+            newDocument
+          );
+
+
+          setCurrentPage(
+            1
+          );
+
+
+          setActiveView(
+            "documents"
+          );
+
+
+          showToast(
+            `${uploadedDocument.filename} uploaded and indexed successfully.`,
+            "success"
+          );
+
+
+          setTimeout(() => {
+
+            setUploadStage(
+              ""
+            );
+
+            setUploadFileName(
+              ""
+            );
+
+          }, 900);
+
+
+        } catch (error) {
+
+          clearTimeout(
+            stageTimerOne
+          );
+
+          clearTimeout(
+            stageTimerTwo
+          );
+
+          clearTimeout(
+            stageTimerThree
+          );
+
+
+          console.error(
+            "Failed to upload document:",
+            error
+          );
+
+
+          setUploadStage(
+            "failed"
+          );
+
+
+          showToast(
+            error.message ||
+            "Failed to upload document.",
+            "error"
+          );
+
+
+          setTimeout(() => {
+
+            setUploadStage(
+              ""
+            );
+
+            setUploadFileName(
+              ""
+            );
+
+          }, 1800);
+
+
+        } finally {
+
+          setUploading(
+            false
+          );
+
+        }
+
+      };
 
 
     input.click();
@@ -247,17 +423,18 @@ function App() {
 
 
   /* =========================================================
-     DELETE DOCUMENT
+     OPEN DELETE MODAL
   ========================================================= */
 
-  const handleDeleteDocument = async (
+  const handleDeleteDocument = (
     documentId
   ) => {
 
     const documentToDelete =
       documents.find(
         (document) =>
-          document.id === documentId
+          document.id ===
+          documentId
       );
 
 
@@ -266,89 +443,128 @@ function App() {
     }
 
 
-    const confirmed =
-      window.confirm(
-        `Delete "${documentToDelete.name}"?`
-      );
+    setDocumentPendingDelete(
+      documentToDelete
+    );
+
+  };
 
 
-    if (!confirmed) {
+  /* =========================================================
+     CONFIRM DELETE
+  ========================================================= */
+
+  const confirmDeleteDocument =
+    async () => {
+
+      if (!documentPendingDelete) {
+        return;
+      }
+
+
+      const documentId =
+        documentPendingDelete.id;
+
+
+      try {
+
+        setDeletingDocumentId(
+          documentId
+        );
+
+
+        await deleteDocument(
+          documentId
+        );
+
+
+        const updatedDocuments =
+          documents.filter(
+            (document) =>
+              document.id !==
+              documentId
+          );
+
+
+        setDocuments(
+          updatedDocuments
+        );
+
+
+        if (
+          selectedDocument?.id ===
+          documentId
+        ) {
+
+          const nextDocument =
+            updatedDocuments.length > 0
+              ? updatedDocuments[0]
+              : null;
+
+
+          setSelectedDocument(
+            nextDocument
+          );
+
+
+          setCurrentPage(
+            1
+          );
+
+        }
+
+
+        showToast(
+          `${documentPendingDelete.name} deleted successfully.`,
+          "success"
+        );
+
+
+        setDocumentPendingDelete(
+          null
+        );
+
+
+      } catch (error) {
+
+        console.error(
+          "Failed to delete document:",
+          error
+        );
+
+
+        showToast(
+          error.message ||
+          "Failed to delete document.",
+          "error"
+        );
+
+
+      } finally {
+
+        setDeletingDocumentId(
+          null
+        );
+
+      }
+
+    };
+
+
+  /* =========================================================
+     CANCEL DELETE
+  ========================================================= */
+
+  const cancelDeleteDocument = () => {
+
+    if (deletingDocumentId) {
       return;
     }
 
 
-    try {
-
-      setDeletingDocumentId(
-        documentId
-      );
-
-
-      await deleteDocument(
-        documentId
-      );
-
-
-      const updatedDocuments =
-        documents.filter(
-          (document) =>
-            document.id !== documentId
-        );
-
-
-      setDocuments(
-        updatedDocuments
-      );
-
-
-      /*
-        If the currently selected
-        document was deleted,
-        select the next available one.
-      */
-
-      if (
-        selectedDocument?.id ===
-        documentId
-      ) {
-
-        const nextDocument =
-          updatedDocuments.length > 0
-            ? updatedDocuments[0]
-            : null;
-
-
-        setSelectedDocument(
-          nextDocument
-        );
-
-
-        setCurrentPage(1);
-
-      }
-
-
-    } catch (error) {
-
-      console.error(
-        "Failed to delete document:",
-        error
-      );
-
-
-      alert(
-        error.message ||
-        "Failed to delete document."
-      );
-
-
-    } finally {
-
-      setDeletingDocumentId(
-        null
-      );
-
-    }
+    setDocumentPendingDelete(
+      null
+    );
 
   };
 
@@ -366,17 +582,137 @@ function App() {
     );
 
 
-    setCurrentPage(1);
+    setCurrentPage(
+      1
+    );
 
-
-    /*
-      Selecting a PDF from Recent
-      should always open the document
-      workspace.
-    */
 
     setActiveView(
       "documents"
+    );
+
+  };
+
+
+  /* =========================================================
+     CLOSE TOAST
+  ========================================================= */
+
+  const handleCloseToast = () => {
+
+    setToast({
+      message: "",
+      type: "success"
+    });
+
+  };
+
+
+  /* =========================================================
+     DOCUMENT WORKSPACE
+  ========================================================= */
+
+  const renderDocumentWorkspace = () => {
+
+    return (
+
+      <>
+
+        <div className="document-header">
+
+          <h1>
+
+            {selectedDocument?.name ||
+              "No document selected"}
+
+          </h1>
+
+
+          {selectedDocument && (
+
+            <span
+              className={`indexed-status ${
+                selectedDocument.status ||
+                "unknown"
+              }`}
+            >
+
+              <span
+                className="status-dot"
+              >
+              </span>
+
+
+              {selectedDocument.status ===
+              "indexed"
+
+                ? "Indexed"
+
+                : selectedDocument.status ===
+                  "processing"
+
+                  ? "Processing"
+
+                  : selectedDocument.status ===
+                    "failed"
+
+                    ? "Failed"
+
+                    : selectedDocument.status ||
+                      "Unknown"}
+
+            </span>
+
+          )}
+
+        </div>
+
+
+        {selectedDocument ? (
+
+          <div className="workspace">
+
+            <DocumentPreview
+              document={
+                selectedDocument
+              }
+
+              currentPage={
+                currentPage
+              }
+
+              onPageChange={
+                setCurrentPage
+              }
+            />
+
+
+            <AIAnalysis
+              document={
+                selectedDocument
+              }
+
+              onSourcePageSelect={
+                setCurrentPage
+              }
+            />
+
+          </div>
+
+        ) : (
+
+          <div className="empty-workspace">
+
+            <p>
+              Upload a document to get started.
+            </p>
+
+          </div>
+
+        )}
+
+      </>
+
     );
 
   };
@@ -390,6 +726,57 @@ function App() {
 
     <div className="app">
 
+
+      <Toast
+        message={
+          toast.message
+        }
+
+        type={
+          toast.type
+        }
+
+        onClose={
+          handleCloseToast
+        }
+      />
+
+
+      <DeleteModal
+        document={
+          documentPendingDelete
+        }
+
+        deleting={
+          deletingDocumentId ===
+          documentPendingDelete?.id
+        }
+
+        onCancel={
+          cancelDeleteDocument
+        }
+
+        onConfirm={
+          confirmDeleteDocument
+        }
+      />
+
+
+      <UploadProgress
+        fileName={
+          uploadFileName
+        }
+
+        stage={
+          uploadStage
+        }
+
+        visible={
+          Boolean(uploadStage)
+        }
+      />
+
+
       <Header
         backendStatus={
           backendStatus
@@ -398,6 +785,7 @@ function App() {
 
 
       <div className="app-body">
+
 
         <Sidebar
           documents={
@@ -435,12 +823,18 @@ function App() {
           onViewChange={
             setActiveView
           }
+
+          uploadStage={
+            uploadStage
+          }
         />
 
 
         <main className="main-content">
 
-          {activeView === "overview" ? (
+
+          {activeView ===
+          "overview" ? (
 
             <Overview
               documents={
@@ -456,107 +850,19 @@ function App() {
               }
             />
 
+
+          ) : activeView ===
+            "collections" ? (
+
+            <Collections />
+
+
           ) : (
 
-            <>
-
-              <div className="document-header">
-
-                <h1>
-
-                  {selectedDocument?.name ||
-                    "No document selected"}
-
-                </h1>
-
-
-                {selectedDocument && (
-
-                  <span
-                    className={`indexed-status ${
-                      selectedDocument.status ||
-                      "unknown"
-                    }`}
-                  >
-
-                    <span
-                      className="status-dot"
-                    >
-                    </span>
-
-
-                    {selectedDocument.status ===
-                    "indexed"
-
-                      ? "Indexed"
-
-                      : selectedDocument.status ===
-                        "processing"
-
-                        ? "Processing"
-
-                        : selectedDocument.status ===
-                          "failed"
-
-                          ? "Failed"
-
-                          : selectedDocument.status ||
-                            "Unknown"}
-
-                  </span>
-
-                )}
-
-              </div>
-
-
-              {selectedDocument ? (
-
-                <div className="workspace">
-
-                  <DocumentPreview
-                    document={
-                      selectedDocument
-                    }
-
-                    currentPage={
-                      currentPage
-                    }
-
-                    onPageChange={
-                      setCurrentPage
-                    }
-                  />
-
-
-                  <AIAnalysis
-                    document={
-                      selectedDocument
-                    }
-
-                    onSourcePageSelect={
-                      setCurrentPage
-                    }
-                  />
-
-                </div>
-
-              ) : (
-
-                <div className="empty-workspace">
-
-                  <p>
-                    Upload a document to
-                    get started.
-                  </p>
-
-                </div>
-
-              )}
-
-            </>
+            renderDocumentWorkspace()
 
           )}
+
 
         </main>
 
