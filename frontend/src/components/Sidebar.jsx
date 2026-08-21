@@ -5,7 +5,9 @@ function Sidebar({
   onAddDocument,
   onDeleteDocument,
   uploading,
-  deletingDocumentId
+  deletingDocumentId,
+  activeView,
+  onViewChange
 }) {
 
   return (
@@ -16,6 +18,7 @@ function Sidebar({
         onClick={onAddDocument}
         disabled={uploading}
       >
+
         <span className="add-document-icon">
           +
         </span>
@@ -25,6 +28,7 @@ function Sidebar({
             ? "Processing..."
             : "Add document"}
         </span>
+
       </button>
 
 
@@ -34,28 +38,42 @@ function Sidebar({
           WORKSPACE
         </p>
 
+
         <nav className="sidebar-nav">
 
           <button
-            className="nav-item nav-item-muted"
+            className={`nav-item ${
+              activeView === "overview"
+                ? "active"
+                : ""
+            }`}
             type="button"
-            disabled
-            title="Overview — coming soon"
+            onClick={() =>
+              onViewChange("overview")
+            }
           >
             <span className="nav-label">
               Overview
             </span>
           </button>
 
+
           <button
-            className="nav-item active"
+            className={`nav-item ${
+              activeView === "documents"
+                ? "active"
+                : ""
+            }`}
             type="button"
-            aria-current="page"
+            onClick={() =>
+              onViewChange("documents")
+            }
           >
             <span className="nav-label">
               Documents
             </span>
           </button>
+
 
           <button
             className="nav-item nav-item-muted"
@@ -88,17 +106,21 @@ function Sidebar({
           {documents.map((document) => {
 
             const isSelected =
-              selectedDocument?.id === document.id;
+              selectedDocument?.id ===
+              document.id;
 
             const isDeleting =
-              deletingDocumentId === document.id;
+              deletingDocumentId ===
+              document.id;
+
 
             return (
 
               <div
                 key={document.id}
                 className={`recent-document-row ${
-                  isSelected
+                  isSelected &&
+                  activeView === "documents"
                     ? "selected-document"
                     : ""
                 }`}
@@ -106,11 +128,20 @@ function Sidebar({
 
                 <button
                   className="recent-document"
-                  onClick={() =>
-                    onSelectDocument(document)
-                  }
+                  onClick={() => {
+
+                    onSelectDocument(
+                      document
+                    );
+
+                    onViewChange(
+                      "documents"
+                    );
+
+                  }}
                   title={document.name}
                 >
+
                   <span className="recent-document-dot">
                     •
                   </span>
@@ -118,22 +149,30 @@ function Sidebar({
                   <span className="recent-document-name">
                     {document.name}
                   </span>
+
                 </button>
 
 
                 <button
                   className="document-delete-button"
                   onClick={(event) => {
+
                     event.stopPropagation();
-                    onDeleteDocument(document.id);
+
+                    onDeleteDocument(
+                      document.id
+                    );
+
                   }}
                   disabled={isDeleting}
                   aria-label={`Delete ${document.name}`}
                   title={`Delete ${document.name}`}
                 >
+
                   {isDeleting
                     ? "..."
                     : "×"}
+
                 </button>
 
               </div>
@@ -149,5 +188,6 @@ function Sidebar({
     </aside>
   );
 }
+
 
 export default Sidebar;

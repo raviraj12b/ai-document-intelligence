@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import DocumentPreview from "./components/DocumentPreview";
 import AIAnalysis from "./components/AIAnalysis";
+import Overview from "./components/Overview";
 
 import {
   checkBackendHealth,
@@ -35,6 +36,13 @@ function App() {
   const [currentPage, setCurrentPage] =
     useState(1);
 
+  const [activeView, setActiveView] =
+    useState("documents");
+
+
+  /* =========================================================
+     BACKEND HEALTH
+  ========================================================= */
 
   useEffect(() => {
 
@@ -60,6 +68,10 @@ function App() {
 
   }, []);
 
+
+  /* =========================================================
+     LOAD DOCUMENTS
+  ========================================================= */
 
   useEffect(() => {
 
@@ -117,17 +129,25 @@ function App() {
   }, []);
 
 
+  /* =========================================================
+     ADD DOCUMENT
+  ========================================================= */
+
   const handleAddDocument = () => {
 
-    const input = document.createElement("input");
+    const input =
+      document.createElement("input");
 
     input.type = "file";
+
     input.accept = ".pdf";
 
 
     input.onchange = async (event) => {
 
-      const file = event.target.files[0];
+      const file =
+        event.target.files[0];
+
 
       if (!file) {
         return;
@@ -144,23 +164,53 @@ function App() {
 
 
         const newDocument = {
+
           id: uploadedDocument.id,
-          name: uploadedDocument.filename,
+
+          name:
+            uploadedDocument.filename,
+
           page: 1,
-          pages: uploadedDocument.pages,
-          characters: uploadedDocument.characters,
-          status: uploadedDocument.status
+
+          pages:
+            uploadedDocument.pages,
+
+          characters:
+            uploadedDocument.characters,
+
+          status:
+            uploadedDocument.status
+
         };
 
 
-        setDocuments((previousDocuments) => [
-          newDocument,
-          ...previousDocuments
-        ]);
+        setDocuments(
+          (previousDocuments) => [
+
+            newDocument,
+
+            ...previousDocuments
+
+          ]
+        );
 
 
-        setSelectedDocument(newDocument);
+        setSelectedDocument(
+          newDocument
+        );
+
+
         setCurrentPage(1);
+
+
+        /*
+          If upload was started from Overview,
+          automatically open the uploaded PDF.
+        */
+
+        setActiveView(
+          "documents"
+        );
 
 
         alert(
@@ -170,9 +220,16 @@ function App() {
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          "Failed to upload document:",
+          error
+        );
 
-        alert(error.message);
+
+        alert(
+          error.message ||
+          "Failed to upload document."
+        );
 
 
       } finally {
@@ -189,14 +246,19 @@ function App() {
   };
 
 
+  /* =========================================================
+     DELETE DOCUMENT
+  ========================================================= */
+
   const handleDeleteDocument = async (
     documentId
   ) => {
 
-    const documentToDelete = documents.find(
-      (document) =>
-        document.id === documentId
-    );
+    const documentToDelete =
+      documents.find(
+        (document) =>
+          document.id === documentId
+      );
 
 
     if (!documentToDelete) {
@@ -204,9 +266,10 @@ function App() {
     }
 
 
-    const confirmed = window.confirm(
-      `Delete "${documentToDelete.name}"?`
-    );
+    const confirmed =
+      window.confirm(
+        `Delete "${documentToDelete.name}"?`
+      );
 
 
     if (!confirmed) {
@@ -216,9 +279,14 @@ function App() {
 
     try {
 
-      setDeletingDocumentId(documentId);
+      setDeletingDocumentId(
+        documentId
+      );
 
-      await deleteDocument(documentId);
+
+      await deleteDocument(
+        documentId
+      );
 
 
       const updatedDocuments =
@@ -228,18 +296,32 @@ function App() {
         );
 
 
-      setDocuments(updatedDocuments);
+      setDocuments(
+        updatedDocuments
+      );
 
+
+      /*
+        If the currently selected
+        document was deleted,
+        select the next available one.
+      */
 
       if (
-        selectedDocument?.id === documentId
+        selectedDocument?.id ===
+        documentId
       ) {
 
-        setSelectedDocument(
+        const nextDocument =
           updatedDocuments.length > 0
             ? updatedDocuments[0]
-            : null
+            : null;
+
+
+        setSelectedDocument(
+          nextDocument
         );
+
 
         setCurrentPage(1);
 
@@ -253,17 +335,27 @@ function App() {
         error
       );
 
-      alert(error.message);
+
+      alert(
+        error.message ||
+        "Failed to delete document."
+      );
 
 
     } finally {
 
-      setDeletingDocumentId(null);
+      setDeletingDocumentId(
+        null
+      );
 
     }
 
   };
 
+
+  /* =========================================================
+     SELECT DOCUMENT
+  ========================================================= */
 
   const handleSelectDocument = (
     document
@@ -273,90 +365,196 @@ function App() {
       document
     );
 
+
     setCurrentPage(1);
+
+
+    /*
+      Selecting a PDF from Recent
+      should always open the document
+      workspace.
+    */
+
+    setActiveView(
+      "documents"
+    );
 
   };
 
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
 
     <div className="app">
 
       <Header
-        backendStatus={backendStatus}
+        backendStatus={
+          backendStatus
+        }
       />
 
 
       <div className="app-body">
 
         <Sidebar
-          documents={documents}
-          selectedDocument={selectedDocument}
-          onSelectDocument={handleSelectDocument}
-          onAddDocument={handleAddDocument}
-          onDeleteDocument={handleDeleteDocument}
-          uploading={uploading}
-          deletingDocumentId={deletingDocumentId}
+          documents={
+            documents
+          }
+
+          selectedDocument={
+            selectedDocument
+          }
+
+          onSelectDocument={
+            handleSelectDocument
+          }
+
+          onAddDocument={
+            handleAddDocument
+          }
+
+          onDeleteDocument={
+            handleDeleteDocument
+          }
+
+          uploading={
+            uploading
+          }
+
+          deletingDocumentId={
+            deletingDocumentId
+          }
+
+          activeView={
+            activeView
+          }
+
+          onViewChange={
+            setActiveView
+          }
         />
 
 
         <main className="main-content">
 
-          <div className="document-header">
+          {activeView === "overview" ? (
 
-            <h1>
-              {selectedDocument?.name || "No document selected"}
-            </h1>
+            <Overview
+              documents={
+                documents
+              }
 
+              backendStatus={
+                backendStatus
+              }
 
-            {selectedDocument && (
-              <span
-                className={`indexed-status ${
-                  selectedDocument.status || "unknown"
-                }`}
-              >
-                <span className="status-dot"></span>
-
-                {selectedDocument.status === "indexed"
-                  ? "Indexed"
-                  : selectedDocument.status === "processing"
-                    ? "Processing"
-                    : selectedDocument.status === "failed"
-                      ? "Failed"
-                      : selectedDocument.status || "Unknown"}
-              </span>
-            )}
-
-          </div>
-
-
-          {selectedDocument ? (
-
-            <div className="workspace">
-
-              <DocumentPreview
-                document={selectedDocument}
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-              />
-
-
-              <AIAnalysis
-                document={selectedDocument}
-                onSourcePageSelect={
-                  setCurrentPage
-                }
-              />
-
-            </div>
+              onAddDocument={
+                handleAddDocument
+              }
+            />
 
           ) : (
 
-            <div className="empty-workspace">
-              <p>
-                Upload a document to get started.
-              </p>
-            </div>
+            <>
+
+              <div className="document-header">
+
+                <h1>
+
+                  {selectedDocument?.name ||
+                    "No document selected"}
+
+                </h1>
+
+
+                {selectedDocument && (
+
+                  <span
+                    className={`indexed-status ${
+                      selectedDocument.status ||
+                      "unknown"
+                    }`}
+                  >
+
+                    <span
+                      className="status-dot"
+                    >
+                    </span>
+
+
+                    {selectedDocument.status ===
+                    "indexed"
+
+                      ? "Indexed"
+
+                      : selectedDocument.status ===
+                        "processing"
+
+                        ? "Processing"
+
+                        : selectedDocument.status ===
+                          "failed"
+
+                          ? "Failed"
+
+                          : selectedDocument.status ||
+                            "Unknown"}
+
+                  </span>
+
+                )}
+
+              </div>
+
+
+              {selectedDocument ? (
+
+                <div className="workspace">
+
+                  <DocumentPreview
+                    document={
+                      selectedDocument
+                    }
+
+                    currentPage={
+                      currentPage
+                    }
+
+                    onPageChange={
+                      setCurrentPage
+                    }
+                  />
+
+
+                  <AIAnalysis
+                    document={
+                      selectedDocument
+                    }
+
+                    onSourcePageSelect={
+                      setCurrentPage
+                    }
+                  />
+
+                </div>
+
+              ) : (
+
+                <div className="empty-workspace">
+
+                  <p>
+                    Upload a document to
+                    get started.
+                  </p>
+
+                </div>
+
+              )}
+
+            </>
 
           )}
 
@@ -369,5 +567,6 @@ function App() {
   );
 
 }
+
 
 export default App;
