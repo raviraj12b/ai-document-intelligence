@@ -22,3 +22,24 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Local documents
+uploads/
+
+# Local vector database
+vector_store/
+
+# Development
+.vscode/
+.DS_Store
