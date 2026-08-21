@@ -9,7 +9,7 @@ function Header({ backendStatus }) {
           ◈
         </span>
 
-        <span>
+        <span className="brand-name">
           DOCUAI
         </span>
 
@@ -18,26 +18,22 @@ function Header({ backendStatus }) {
 
       <div className="header-actions">
 
-        <button className="search-button">
-          Search
-        </button>
-
-
         <div className="user-profile">
 
           <span
             className={`backend-indicator ${backendStatus}`}
+            title={`Backend: ${backendStatus}`}
           >
             ●
           </span>
 
-          <span>
+          <span className="user-name">
             Raj
           </span>
 
-          <span className="user-status">
-            •••
-          </span>
+          <div className="user-avatar">
+            R
+          </div>
 
         </div>
 

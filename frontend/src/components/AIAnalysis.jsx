@@ -4,17 +4,25 @@ import SourceList from "./SourceList";
 import { askQuestion } from "../api";
 
 
-function AIAnalysis({ document }) {
+function AIAnalysis({
+  document,
+  onSourcePageSelect
+}) {
 
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] =
+    useState("");
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] =
+    useState([]);
 
-  const [sources, setSources] = useState([]);
+  const [sources, setSources] =
+    useState([]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
 
   useEffect(() => {
@@ -33,17 +41,24 @@ function AIAnalysis({ document }) {
 
 
     if (!document?.id) {
+
       setError(
         "Select a document before asking a question."
       );
+
       return;
+
     }
 
 
-    const trimmedQuestion = question.trim();
+    const trimmedQuestion =
+      question.trim();
 
 
-    if (!trimmedQuestion || loading) {
+    if (
+      !trimmedQuestion ||
+      loading
+    ) {
       return;
     }
 
@@ -67,10 +82,11 @@ function AIAnalysis({ document }) {
 
     try {
 
-      const result = await askQuestion(
-        trimmedQuestion,
-        document.id
-      );
+      const result =
+        await askQuestion(
+          trimmedQuestion,
+          document.id
+        );
 
 
       const aiMessage = {
@@ -94,6 +110,7 @@ function AIAnalysis({ document }) {
 
       console.error(error);
 
+
       setError(
         error.message ||
         "Something went wrong while processing your question."
@@ -113,25 +130,68 @@ function AIAnalysis({ document }) {
 
     <section className="ai-analysis">
 
+
       <div className="analysis-header">
 
-        <p>
-          AI ANALYSIS
-        </p>
+        <div className="analysis-heading-group">
 
-        <h2>
-          Ask anything about this document
-        </h2>
+          <p className="analysis-eyebrow">
+            AI ANALYSIS
+          </p>
+
+          <h2>
+            Ask anything about this document
+          </h2>
+
+        </div>
 
       </div>
 
 
-      <div className="conversation">
+      <form
+        className="chat-input chat-input-top"
+        onSubmit={handleSubmit}
+      >
 
+        <div className="chat-input-wrapper">
+
+          <input
+            type="text"
+            value={question}
+            onChange={(event) =>
+              setQuestion(event.target.value)
+            }
+            placeholder="Ask a question..."
+            disabled={loading}
+          />
+
+          <button
+            type="submit"
+            className="send-button"
+            disabled={
+              loading ||
+              !question.trim()
+            }
+            aria-label="Send question"
+            title="Send question"
+          >
+            ↑
+          </button>
+
+        </div>
+
+      </form>
+
+
+      <div className="conversation">
 
         {messages.length === 0 && (
 
           <div className="empty-chat">
+
+            <div className="empty-chat-icon">
+              ✦
+            </div>
 
             <p>
               Ask a question about the indexed document.
@@ -156,7 +216,6 @@ function AIAnalysis({ document }) {
               </span>
 
             )}
-
 
             <p>
               {message.text}
@@ -197,44 +256,26 @@ function AIAnalysis({ document }) {
 
       {sources.length > 0 && (
 
-        <SourceList
-          sources={sources}
-        />
+        <div className="analysis-sources">
+
+          <SourceList
+            sources={sources}
+            onSourceClick={onSourcePageSelect}
+          />
+
+        </div>
 
       )}
 
 
-      <form
-        className="chat-input"
-        onSubmit={handleSubmit}
-      >
-
-        <input
-          type="text"
-          value={question}
-          onChange={(event) =>
-            setQuestion(event.target.value)
-          }
-          placeholder="Ask a question..."
-          disabled={loading}
-        />
-
-
-        <button
-          type="submit"
-          disabled={
-            loading ||
-            !question.trim()
-          }
-        >
-          ↑
-        </button>
-
-      </form>
+      <div className="analysis-decoration">
+        ✦
+      </div>
 
     </section>
 
   );
+
 }
 
 

@@ -1,4 +1,4 @@
-import {useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import "./App.css";
 
@@ -6,7 +6,13 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import DocumentPreview from "./components/DocumentPreview";
 import AIAnalysis from "./components/AIAnalysis";
-import { checkBackendHealth, uploadDocument , getDocuments, deleteDocument} from "./api";
+
+import {
+  checkBackendHealth,
+  uploadDocument,
+  getDocuments,
+  deleteDocument
+} from "./api";
 
 
 function App() {
@@ -16,7 +22,7 @@ function App() {
 
   const [uploading, setUploading] =
     useState(false);
-  
+
   const [documents, setDocuments] =
     useState([]);
 
@@ -24,7 +30,10 @@ function App() {
     useState(null);
 
   const [deletingDocumentId, setDeletingDocumentId] =
-  useState(null);
+    useState(null);
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
 
   useEffect(() => {
@@ -36,212 +45,246 @@ function App() {
         await checkBackendHealth();
 
         setBackendStatus("connected");
-      
+
       } catch (error) {
 
         console.error(error);
 
         setBackendStatus("offline");
+
       }
+
     }
 
     checkConnection();
 
   }, []);
 
+
   useEffect(() => {
 
-  async function loadDocuments() {
+    async function loadDocuments() {
 
-    try {
+      try {
 
-      const data =
-        await getDocuments();
+        const data =
+          await getDocuments();
 
 
-      const formattedDocuments =
-        data.documents.map(
-          (document) => ({
-            id: document.id,
-            name: document.filename,
-            page: 1,
-            pages: document.pages,
-            characters:
-              document.characters,
-            status: document.status
-          })
+        const formattedDocuments =
+          data.documents.map(
+            (document) => ({
+              id: document.id,
+              name: document.filename,
+              page: 1,
+              pages: document.pages,
+              characters: document.characters,
+              status: document.status
+            })
+          );
+
+
+        setDocuments(
+          formattedDocuments
         );
 
 
-      setDocuments(
-        formattedDocuments
-      );
+        if (
+          formattedDocuments.length > 0
+        ) {
+
+          setSelectedDocument(
+            formattedDocuments[0]
+          );
+
+        }
 
 
-      if (
-        formattedDocuments.length > 0
-      ) {
+      } catch (error) {
 
-        setSelectedDocument(
-          formattedDocuments[0]
+        console.error(
+          "Failed to load documents:",
+          error
         );
+
       }
-
-
-    } catch (error) {
-
-      console.error(
-        "Failed to load documents:",
-        error
-      );
 
     }
 
-  }
 
+    loadDocuments();
 
-  loadDocuments();
+  }, []);
 
-}, []);
 
   const handleAddDocument = () => {
 
-  const input = document.createElement("input");
+    const input = document.createElement("input");
 
-  input.type = "file";
-  input.accept = ".pdf";
+    input.type = "file";
+    input.accept = ".pdf";
 
 
-  input.onchange = async (event) => {
+    input.onchange = async (event) => {
 
-    const file = event.target.files[0];
+      const file = event.target.files[0];
 
-    if (!file) {
+      if (!file) {
+        return;
+      }
+
+
+      try {
+
+        setUploading(true);
+
+
+        const uploadedDocument =
+          await uploadDocument(file);
+
+
+        const newDocument = {
+          id: uploadedDocument.id,
+          name: uploadedDocument.filename,
+          page: 1,
+          pages: uploadedDocument.pages,
+          characters: uploadedDocument.characters,
+          status: uploadedDocument.status
+        };
+
+
+        setDocuments((previousDocuments) => [
+          newDocument,
+          ...previousDocuments
+        ]);
+
+
+        setSelectedDocument(newDocument);
+        setCurrentPage(1);
+
+
+        alert(
+          `${uploadedDocument.filename} uploaded successfully.`
+        );
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+
+      } finally {
+
+        setUploading(false);
+
+      }
+
+    };
+
+
+    input.click();
+
+  };
+
+
+  const handleDeleteDocument = async (
+    documentId
+  ) => {
+
+    const documentToDelete = documents.find(
+      (document) =>
+        document.id === documentId
+    );
+
+
+    if (!documentToDelete) {
+      return;
+    }
+
+
+    const confirmed = window.confirm(
+      `Delete "${documentToDelete.name}"?`
+    );
+
+
+    if (!confirmed) {
       return;
     }
 
 
     try {
 
-      setUploading(true);
+      setDeletingDocumentId(documentId);
+
+      await deleteDocument(documentId);
 
 
-      const uploadedDocument =
-        await uploadDocument(file);
+      const updatedDocuments =
+        documents.filter(
+          (document) =>
+            document.id !== documentId
+        );
 
 
-      const newDocument = {
-        id: uploadedDocument.id,
-        name: uploadedDocument.filename,
-        page: 1,
-        pages: uploadedDocument.pages,
-        characters: uploadedDocument.characters,
-        status: uploadDocument.status
-      };
-
-      setDocuments((previousDocuments) => [
-        newDocument,
-        ...previousDocuments
-      ]);
+      setDocuments(updatedDocuments);
 
 
-      setSelectedDocument(newDocument);
+      if (
+        selectedDocument?.id === documentId
+      ) {
 
+        setSelectedDocument(
+          updatedDocuments.length > 0
+            ? updatedDocuments[0]
+            : null
+        );
 
-      alert(
-        `${uploadedDocument.filename} uploaded successfully.`
-      );
+        setCurrentPage(1);
+
+      }
 
 
     } catch (error) {
 
-      console.error(error);
+      console.error(
+        "Failed to delete document:",
+        error
+      );
 
       alert(error.message);
 
 
     } finally {
 
-      setUploading(false);
+      setDeletingDocumentId(null);
 
     }
 
   };
 
 
-  input.click();
-};
-const handleDeleteDocument = async (documentId) => {
+  const handleSelectDocument = (
+    document
+  ) => {
 
-  const documentToDelete = documents.find(
-    (document) => document.id === documentId
-  );
-
-  if (!documentToDelete) {
-    return;
-  }
-
-
-  const confirmed = window.confirm(
-    `Delete "${documentToDelete.name}"?`
-  );
-
-  if (!confirmed) {
-    return;
-  }
-
-
-  try {
-
-    setDeletingDocumentId(documentId);
-
-    await deleteDocument(documentId);
-
-
-    const updatedDocuments = documents.filter(
-      (document) =>
-        document.id !== documentId
+    setSelectedDocument(
+      document
     );
 
+    setCurrentPage(1);
 
-    setDocuments(updatedDocuments);
+  };
 
-
-    if (
-      selectedDocument?.id === documentId)
-    {
-
-      setSelectedDocument(
-        updatedDocuments.length > 0
-          ? updatedDocuments[0]
-          : null
-      );
-    }
-
-
-  } catch (error) {
-
-    console.error(
-      "Failed to delete document:",
-      error
-    );
-
-    alert(error.message);
-
-
-  } finally {
-
-    setDeletingDocumentId(null);
-
-  }
-
-};
 
   return (
 
     <div className="app">
 
-      <Header backendStatus={backendStatus} />
+      <Header
+        backendStatus={backendStatus}
+      />
 
 
       <div className="app-body">
@@ -249,7 +292,7 @@ const handleDeleteDocument = async (documentId) => {
         <Sidebar
           documents={documents}
           selectedDocument={selectedDocument}
-          onSelectDocument={setSelectedDocument}
+          onSelectDocument={handleSelectDocument}
           onAddDocument={handleAddDocument}
           onDeleteDocument={handleDeleteDocument}
           uploading={uploading}
@@ -261,48 +304,70 @@ const handleDeleteDocument = async (documentId) => {
 
           <div className="document-header">
 
-            <div>
-              <h1>
-                {selectedDocument?.name || "No document selected"}
-              </h1>
+            <h1>
+              {selectedDocument?.name || "No document selected"}
+            </h1>
+
+
+            {selectedDocument && (
+              <span
+                className={`indexed-status ${
+                  selectedDocument.status || "unknown"
+                }`}
+              >
+                <span className="status-dot"></span>
+
+                {selectedDocument.status === "indexed"
+                  ? "Indexed"
+                  : selectedDocument.status === "processing"
+                    ? "Processing"
+                    : selectedDocument.status === "failed"
+                      ? "Failed"
+                      : selectedDocument.status || "Unknown"}
+              </span>
+            )}
+
+          </div>
+
+
+          {selectedDocument ? (
+
+            <div className="workspace">
+
+              <DocumentPreview
+                document={selectedDocument}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+              />
+
+
+              <AIAnalysis
+                document={selectedDocument}
+                onSourcePageSelect={
+                  setCurrentPage
+                }
+              />
+
             </div>
 
+          ) : (
 
-            <span className="indexed-status">
-              ● Indexed
-            </span>
+            <div className="empty-workspace">
+              <p>
+                Upload a document to get started.
+              </p>
+            </div>
 
-          </div>
-
-
-        {selectedDocument ? (
-
-          <div className="workspace">
-
-            <DocumentPreview
-              document={selectedDocument}
-            />
-
-            <AIAnalysis
-              document={selectedDocument}
-            />
-
-          </div>
-
-        ) : (
-
-          <div className="empty-workspace">
-            <p>Upload a document to get started.</p>
-          </div>
-
-        )}
+          )}
 
         </main>
 
       </div>
 
     </div>
+
   );
+
 }
 
 export default App;

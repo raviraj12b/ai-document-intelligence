@@ -3,9 +3,10 @@ import shutil
 import uuid
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi.responses import FileResponse
 
 from app.services.pdf_service import extract_pdf_text
-from app.services.document_registry import add_document, load_documents, delete_document
+from app.services.document_registry import add_document, load_documents, delete_document, get_document
 
 from app.rag.chunker import chunk_pages
 from app.rag.embeddings import create_embeddings
@@ -35,6 +36,62 @@ def get_documents():
         "documents": documents
     }
 
+@router.get("/{document_id}/file")
+def get_document_file(document_id: str):
+
+    document = get_document(
+        document_id
+    )
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found."
+        )
+
+
+    stored_filename = document.get(
+        "stored_filename"
+    )
+
+
+    if not stored_filename:
+
+        filename = document.get(
+            "filename"
+        )
+
+        if filename:
+            stored_filename = (
+                f"{document_id}_{filename}"
+            )
+
+
+    if not stored_filename:
+        raise HTTPException(
+            status_code=404,
+            detail="Stored file information not found."
+        )
+
+
+    file_path = os.path.join(
+        UPLOAD_DIR,
+        stored_filename
+    )
+
+
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=404,
+            detail="PDF file not found."
+        )
+
+
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=document["filename"]
+    )
 
 @router.post("/upload")
 async def upload_document(

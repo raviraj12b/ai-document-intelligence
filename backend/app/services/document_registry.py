@@ -75,3 +75,14 @@ def delete_document(document_id):
     save_documents(updated_documents)
 
     return deleted_document
+
+def get_document(document_id):
+
+    documents = load_documents()
+
+    for document in documents:
+
+        if document["id"] == document_id:
+            return document
+
+    return None
