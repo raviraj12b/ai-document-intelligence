@@ -1,37 +1,28 @@
 import json
-import os
 
 import faiss
 import numpy as np
 
-
-VECTOR_STORE_DIR = "vector_store"
-
-INDEX_PATH = os.path.join(
-    VECTOR_STORE_DIR,
-    "documents.index"
-)
-
-METADATA_PATH = os.path.join(
-    VECTOR_STORE_DIR,
-    "metadata.json"
+from app.config import (
+    FAISS_INDEX_FILE,
+    FAISS_METADATA_FILE,
+    VECTOR_STORE_DIR
 )
 
 
 def load_vector_store():
 
-    if not os.path.exists(INDEX_PATH):
+    if not FAISS_INDEX_FILE.exists():
         return None, []
 
     index = faiss.read_index(
-        INDEX_PATH
+        str(FAISS_INDEX_FILE)
     )
 
-    if not os.path.exists(METADATA_PATH):
+    if not FAISS_METADATA_FILE.exists():
         return index, []
 
-    with open(
-        METADATA_PATH,
+    with FAISS_METADATA_FILE.open(
         "r",
         encoding="utf-8"
     ) as file:
@@ -46,8 +37,8 @@ def add_to_vector_store(
     new_metadata
 ):
 
-    os.makedirs(
-        VECTOR_STORE_DIR,
+    VECTOR_STORE_DIR.mkdir(
+        parents=True,
         exist_ok=True
     )
 
@@ -55,6 +46,14 @@ def add_to_vector_store(
         embeddings,
         dtype="float32"
     )
+
+    if (
+        embeddings.ndim != 2
+        or embeddings.shape[0] == 0
+    ):
+        raise ValueError(
+            "Embeddings must be a non-empty 2D array."
+        )
 
     existing_index, existing_metadata = (
         load_vector_store()
@@ -83,17 +82,16 @@ def add_to_vector_store(
     )
 
     combined_metadata = (
-        existing_metadata +
-        new_metadata
+        existing_metadata
+        + new_metadata
     )
 
     faiss.write_index(
         index,
-        INDEX_PATH
+        str(FAISS_INDEX_FILE)
     )
 
-    with open(
-        METADATA_PATH,
+    with FAISS_METADATA_FILE.open(
         "w",
         encoding="utf-8"
     ) as file:
@@ -105,31 +103,39 @@ def add_to_vector_store(
             indent=2
         )
 
+
 def rebuild_vector_store(
     embeddings,
     metadata
 ):
 
-    os.makedirs(
-        VECTOR_STORE_DIR,
+    VECTOR_STORE_DIR.mkdir(
+        parents=True,
         exist_ok=True
     )
 
     if len(metadata) == 0:
 
-        if os.path.exists(INDEX_PATH):
-            os.remove(INDEX_PATH)
+        if FAISS_INDEX_FILE.exists():
+            FAISS_INDEX_FILE.unlink()
 
-        if os.path.exists(METADATA_PATH):
-            os.remove(METADATA_PATH)
+        if FAISS_METADATA_FILE.exists():
+            FAISS_METADATA_FILE.unlink()
 
         return
-
 
     embeddings = np.asarray(
         embeddings,
         dtype="float32"
     )
+
+    if (
+        embeddings.ndim != 2
+        or embeddings.shape[0] == 0
+    ):
+        raise ValueError(
+            "Embeddings must be a non-empty 2D array."
+        )
 
     dimension = embeddings.shape[1]
 
@@ -143,11 +149,10 @@ def rebuild_vector_store(
 
     faiss.write_index(
         index,
-        INDEX_PATH
+        str(FAISS_INDEX_FILE)
     )
 
-    with open(
-        METADATA_PATH,
+    with FAISS_METADATA_FILE.open(
         "w",
         encoding="utf-8"
     ) as file:
@@ -158,6 +163,7 @@ def rebuild_vector_store(
             ensure_ascii=False,
             indent=2
         )
+
 
 def get_metadata():
 

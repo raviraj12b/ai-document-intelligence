@@ -1,21 +1,17 @@
 import json
-import os
 
-
-DATA_DIR = "data"
-REGISTRY_PATH = os.path.join(
-    DATA_DIR,
-    "documents.json"
+from app.config import (
+    DOCUMENT_DATA_DIR,
+    DOCUMENT_REGISTRY_FILE
 )
 
 
 def load_documents():
 
-    if not os.path.exists(REGISTRY_PATH):
+    if not DOCUMENT_REGISTRY_FILE.exists():
         return []
 
-    with open(
-        REGISTRY_PATH,
+    with DOCUMENT_REGISTRY_FILE.open(
         "r",
         encoding="utf-8"
     ) as file:
@@ -24,13 +20,12 @@ def load_documents():
 
 def save_documents(documents):
 
-    os.makedirs(
-        DATA_DIR,
+    DOCUMENT_DATA_DIR.mkdir(
+        parents=True,
         exist_ok=True
     )
 
-    with open(
-        REGISTRY_PATH,
+    with DOCUMENT_REGISTRY_FILE.open(
         "w",
         encoding="utf-8"
     ) as file:
@@ -53,6 +48,7 @@ def add_document(document):
 
     return document
 
+
 def delete_document(document_id):
 
     documents = load_documents()
@@ -72,9 +68,12 @@ def delete_document(document_id):
         if document["id"] == document_id
     )
 
-    save_documents(updated_documents)
+    save_documents(
+        updated_documents
+    )
 
     return deleted_document
+
 
 def get_document(document_id):
 

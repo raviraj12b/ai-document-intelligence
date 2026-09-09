@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 vector_store/
 uploads/
+backend/data/documents.json

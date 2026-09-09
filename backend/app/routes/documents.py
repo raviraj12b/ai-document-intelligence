@@ -1,29 +1,34 @@
-import os
 import shutil
 import uuid
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    UploadFile
+)
 from fastapi.responses import FileResponse
 
-from app.services.pdf_service import extract_pdf_text
-from app.services.document_registry import add_document, load_documents, delete_document, get_document
-
+from app.config import UPLOAD_DIR
 from app.rag.chunker import chunk_pages
 from app.rag.embeddings import create_embeddings
-from app.rag.vector_store import add_to_vector_store, get_metadata, rebuild_vector_store
+from app.rag.vector_store import (
+    add_to_vector_store,
+    get_metadata,
+    rebuild_vector_store
+)
+from app.services.document_registry import (
+    add_document,
+    delete_document,
+    get_document,
+    load_documents
+)
+from app.services.pdf_service import extract_pdf_text
 
 
 router = APIRouter(
     prefix="/documents",
     tags=["Documents"]
-)
-
-
-UPLOAD_DIR = "uploads"
-
-os.makedirs(
-    UPLOAD_DIR,
-    exist_ok=True
 )
 
 
@@ -36,8 +41,11 @@ def get_documents():
         "documents": documents
     }
 
+
 @router.get("/{document_id}/file")
-def get_document_file(document_id: str):
+def get_document_file(
+    document_id: str
+):
 
     document = get_document(
         document_id
@@ -49,11 +57,9 @@ def get_document_file(document_id: str):
             detail="Document not found."
         )
 
-
     stored_filename = document.get(
         "stored_filename"
     )
-
 
     if not stored_filename:
 
@@ -66,32 +72,32 @@ def get_document_file(document_id: str):
                 f"{document_id}_{filename}"
             )
 
-
     if not stored_filename:
         raise HTTPException(
             status_code=404,
-            detail="Stored file information not found."
+            detail=(
+                "Stored file information "
+                "not found."
+            )
         )
 
-
-    file_path = os.path.join(
-        UPLOAD_DIR,
-        stored_filename
+    file_path = (
+        UPLOAD_DIR
+        / stored_filename
     )
 
-
-    if not os.path.exists(file_path):
+    if not file_path.exists():
         raise HTTPException(
             status_code=404,
             detail="PDF file not found."
         )
 
-
     return FileResponse(
-        path=file_path,
+        path=str(file_path),
         media_type="application/pdf",
         filename=document["filename"]
     )
+
 
 @router.post("/upload")
 async def upload_document(
@@ -100,119 +106,140 @@ async def upload_document(
 
     filename = file.filename
 
-    if not filename or not filename.lower().endswith(".pdf"):
+    if (
+        not filename
+        or not filename.lower().endswith(
+            ".pdf"
+        )
+    ):
         raise HTTPException(
             status_code=400,
-            detail="Only PDF files are supported."
+            detail=(
+                "Only PDF files are supported."
+            )
         )
-
 
     document_id = str(
         uuid.uuid4()
     )
 
-
     safe_filename = (
         f"{document_id}_{filename}"
     )
 
-
-    file_path = os.path.join(
-        UPLOAD_DIR,
-        safe_filename
+    file_path = (
+        UPLOAD_DIR
+        / safe_filename
     )
 
+    try:
 
-    with open(
-        file_path,
-        "wb"
-    ) as buffer:
+        with file_path.open(
+            "wb"
+        ) as buffer:
 
-        shutil.copyfileobj(
-            file.file,
-            buffer
+            shutil.copyfileobj(
+                file.file,
+                buffer
+            )
+
+        # 1. Extract PDF text
+
+        pages = extract_pdf_text(
+            str(file_path)
         )
 
+        # 2. Split text into chunks
 
-    # 1. Extract PDF text
+        chunks = chunk_pages(
+            pages
+        )
 
-    pages = extract_pdf_text(
-        file_path
-    )
+        if not chunks:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "No extractable text was "
+                    "found in the PDF."
+                )
+            )
 
+        # 3. Create embeddings
 
-    # 2. Split text into chunks
+        texts = [
+            chunk["text"]
+            for chunk in chunks
+        ]
 
-    chunks = chunk_pages(
-        pages
-    )
-    if not chunks:
-        raise HTTPException(
-        status_code=400,
-        detail="No extractable text was found in the PDF."
-    )
+        embeddings = create_embeddings(
+            texts
+        )
 
+        # 4. Create metadata
 
-    # 3. Create embeddings
+        metadata = [
+            {
+                "document_id": document_id,
+                "text": chunk["text"],
+                "source": filename,
+                "page": chunk["page"]
+            }
+            for chunk in chunks
+        ]
 
-    texts = [
-        chunk["text"]
-        for chunk in chunks
-    ]
+        # 5. Add vectors to FAISS
 
+        add_to_vector_store(
+            embeddings,
+            metadata
+        )
 
-    embeddings = create_embeddings(
-        texts
-    )
+        total_characters = sum(
+            len(page["text"])
+            for page in pages
+        )
 
-
-    # 4. Create metadata
-
-    metadata = [
-        {
-            "document_id": document_id,
-            "text": chunk["text"],
-            "source": filename,
-            "page": chunk["page"]
+        document_record = {
+            "id": document_id,
+            "filename": filename,
+            "stored_filename": (
+                safe_filename
+            ),
+            "pages": len(pages),
+            "characters": (
+                total_characters
+            ),
+            "chunks": len(chunks),
+            "status": "indexed"
         }
-        for chunk in chunks
-    ]
 
+        add_document(
+            document_record
+        )
 
-    # 5. Add vectors to FAISS
+        return document_record
 
-    add_to_vector_store(
-        embeddings,
-        metadata
-    )
+    except HTTPException:
 
+        # Avoid leaving an orphaned upload
+        # when validation/processing fails.
+        if file_path.exists():
+            file_path.unlink()
 
-    total_characters = sum(
-        len(page["text"])
-        for page in pages
-    )
+        raise
 
+    except Exception:
 
-    document_record = {
-        "id": document_id,
-        "filename": filename,
-        "stored_filename": safe_filename,
-        "pages": len(pages),
-        "characters": total_characters,
-        "chunks": len(chunks),
-        "status": "indexed"
-    }
+        if file_path.exists():
+            file_path.unlink()
 
+        raise
 
-    add_document(
-        document_record
-    )
-
-
-    return document_record
 
 @router.delete("/{document_id}")
-def remove_document(document_id: str):
+def remove_document(
+    document_id: str
+):
 
     deleted_document = delete_document(
         document_id
@@ -224,16 +251,15 @@ def remove_document(document_id: str):
             detail="Document not found."
         )
 
-
     metadata = get_metadata()
-
 
     remaining_metadata = [
         item
         for item in metadata
-        if item.get("document_id") != document_id
+        if item.get(
+            "document_id"
+        ) != document_id
     ]
-
 
     if remaining_metadata:
 
@@ -258,26 +284,36 @@ def remove_document(document_id: str):
             []
         )
 
-    stored_filename = deleted_document.get("stored_filename")
-    filename = None
+    stored_filename = (
+        deleted_document.get(
+            "stored_filename"
+        )
+    )
 
     if not stored_filename:
-        filename = deleted_document.get("filename")
 
-    if filename:
-        stored_filename = f"{document_id}_{filename}"
+        filename = deleted_document.get(
+            "filename"
+        )
 
+        if filename:
+            stored_filename = (
+                f"{document_id}_{filename}"
+            )
 
     if stored_filename:
-        file_path = os.path.join(
-        UPLOAD_DIR,
-        stored_filename
-     )
 
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
-    else:
-        print(
-            f"Uploaded file not found: {file_path}"
+        file_path = (
+            UPLOAD_DIR
+            / stored_filename
         )
+
+        if file_path.exists():
+            file_path.unlink()
+
+    return {
+        "message": (
+            "Document deleted successfully."
+        ),
+        "document_id": document_id
+    }
